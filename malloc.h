@@ -11,7 +11,11 @@ struct memBlock {
     
 };
 
+//Declaration of the function that will initialize our malloc implementation
 void start();
+
+//Declaration of our merge function that will merge adjacent memory blocks together if they are both free
+void merge(struct memBlock *block, void *index);
 
 //Declaration of our free function
 void myfree(void *ptr, char *file, int line);
