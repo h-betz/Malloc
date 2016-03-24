@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "malloc.h"
+#include "mymalloc.h"
 
 void * memPtr;                                          //will keep track of where our memory starts
 void * lastPtr;                                         //will keep track of where our memory ends
@@ -42,11 +42,12 @@ void myfree(void *ptr, char *file, int line) {
     //First check to see if we allocated any memory with our malloc
     if (!started) {
         printf("Error! No memory has been allocated. In file: %s on line: %d\n", file, line);
+        return;
     }
     
     //Next do a check to see if the pointer passed was actually a NULL value
     if (ptr == NULL) {
-        printf("Error. No memory was ever allocated\n");
+        printf("Error. No memory was ever allocated. In file: %s on line: %d\n", file, line);
         return;
     }
     
@@ -74,7 +75,6 @@ void myfree(void *ptr, char *file, int line) {
             }
             
             //Otherwise, mark the memory block as free and merge with neighboring blocks if possible
-            printf("Freeing memory of size %d\n", mem->size);
             mem->free = 1;
             ptr = NULL;
             merge(currentInd, index);
@@ -102,8 +102,15 @@ void myfree(void *ptr, char *file, int line) {
 }
 
 //our memory allocator function
-void * mymalloc(int bytes, char *file, int line) {
+void * mymalloc(unsigned int bytes, char *file, int line) {
     
+    bytes = abs(bytes);                                 //making sure that the bytes value we are working with is positive
+    
+    if (bytes == 0) {
+        printf("Error! Invalid input value. In file %s on line %d\n", file, line);
+        return NULL;
+    }    
+        
     //Check to see if our malloc-er has been initialized
     if (!started) {
         start();                                        //initialize everything needed to malloc
@@ -126,7 +133,6 @@ void * mymalloc(int bytes, char *file, int line) {
             if (currentInd->size >= bytes) {            //the space has enough room for our bytes
                 currentInd->free = 0;                   //set memory block as unavailable 
                 memLoc = index;                         //set memloc to point to this index address
-                printf("Successfully malloced memory of size %d\n", old_size);
                 break;
             }
         } 
@@ -142,9 +148,12 @@ void * mymalloc(int bytes, char *file, int line) {
         lastPtr = lastPtr + bytes;                      //increment the last place index to account for the change in added memory
         currentInd = memLoc;                            //set the current memory block to point to the memloc (index of old last place)
         currentInd->free = 0;                           //mark the memory block as not free
-        currentInd->size = bytes;                       //set the size of memory block to the number of bytes
-        printf("Successfully malloced memory of size %d\n", old_size);
-        
+        currentInd->size = bytes;                       //set the size of memory block to the number of bytes        
+    }
+    
+    if (memPtr == lastPtr) {
+        printf("Error! Failed to allocate memory. In file %s on line %d\n", file, line);
+        return NULL;        
     }
     
     memLoc = memLoc + sizeof(struct memBlock);          //move the pointer past the memory block
@@ -152,5 +161,4 @@ void * mymalloc(int bytes, char *file, int line) {
     return memLoc;
     
 }
-
 
